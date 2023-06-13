@@ -5,27 +5,27 @@ const bcrypt = require("bcrypt");
 const userSignin = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     try {
-        User.findOne({ email: email }, async (err, user) => {
-            if (user) {
-                const isMatch = await bcrypt.compare(password, user.password);
-                if (isMatch) {
-                    const token = await user.generateAuthToken();
-                    res.cookie("jwt", token, { httpOnly: true, SameSite: false });
-                    res.send({
-                        success: true,
-                        message: "hewwo"
-                    }).status(201);
+        const loginUser = await User.findOne({ email: email });
+        if (loginUser) {
+            const isMatch = await bcrypt.compare(password, loginUser.password);
+            if (isMatch) {
+                const token = await loginUser.generateAuthToken();
+                res.cookie("jwt", token, { httpOnly: true, SameSite: false });
+                res.send({
+                    success: true,
+                    message: "hewwo"
+                }).status(201);
 
-                } else {
-                    res.send({ message: "Invalid credentials" }).status(401);
-
-                }
             } else {
-                res.send({ message: "User not found" }).status(401);
+                res.send({ message: "Invalid credentials" }).status(401);
 
             }
-        })
-    } catch (error) {
+        } else {
+            res.send({ message: "User not found" }).status(401);
+
+        }
+    }
+    catch (error) {
         res.send(error).status(404);
 
     }
@@ -38,23 +38,22 @@ const userSignup = asyncHandler(async (req, res) => {
         throw new Error("Please Enter Mandatory fields")
     }
     try {
-        User.findOne({ email: email }, async (err, user) => {
-            if (user) {
-                res.send({ message: "User already regestered" });
-            } else {
-                try {
-                    const user = new User({ name, email, password, phone_number });
-                    const token = await user.generateAuthToken();
+        const registerUser = await User.findOne({ email: email });
+        if (registerUser) {
+            res.send({ message: "User already regestered" });
+        } else {
+            try {
+                const registerUser = new User({ name, email, password, phone_number });
+                const token = await registerUser.generateAuthToken();
 
-                    res.cookie("jwt", token, { httpOnly: true, SameSite: false });
-                    const createUser = await user.save();
-                    res.send({ success: true, message: "Signed up successfull" }).status(200);
+                res.cookie("jwt", token, { httpOnly: true, SameSite: false });
+                const createUser = await registerUser.save();
+                res.send({ success: true, message: "Signed up successfull" }).status(200);
 
-                } catch (error) {
-                    console.log(error);
-                }
+            } catch (error) {
+                console.log(error);
             }
-        })
+        }
     } catch (error) {
         console.log(error);
     }
